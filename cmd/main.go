@@ -12,33 +12,78 @@ import (
 
 func main() {
 	var symbol string
+	var jsonFormat bool
+	var search string
 	var fromDate string
 	var toDate string
+	var country string
+	var assetType string
 	var symbolFile string
 	flag.StringVar(&symbol, "symbol", "", "Symbol to download data for")
+	flag.BoolVar(&jsonFormat, "json", false, "Format as JSON")
+	flag.StringVar(&search, "search", "", "Symbol to search for")
 	flag.StringVar(&fromDate, "fromDate", "", "From date")
 	flag.StringVar(&toDate, "toDate", "", "The date to obtain data to")
+	flag.StringVar(&country, "country", "", "Country stock market")
+	flag.StringVar(&assetType, "assetType", "", "The type of asset: equities, bond, etf, index, crypto")
 	flag.StringVar(&symbolFile, "symbolFile", "", "A file containing symbold to download data for")
 	flag.Parse()
 
-	if isFlagPassed("symbol") {
-
-		investgo.GetSymbolHistoricalData(symbol, fromDate, toDate)
-	}
-
 	if isFlagPassed("symbolFile") {
 
-		files, err := readLines(symbolFile)
+		symbols, err := readLines(symbolFile)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		for _, file := range files {
-			fmt.Println(file)
-			investgo.SymbolHistoricalDataToCSV(file, fromDate, toDate)
+		for _, symbol := range symbols {
+			fmt.Println(symbol)
+			err := investgo.HistoricalDataToCSV(country, assetType, symbol, fromDate, toDate)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
+		os.Exit(0)
 	}
+
+	if isFlagPassed("search") && isFlagPassed("assetType") && isFlagPassed("country") && jsonFormat {
+		jsonString, err := investgo.SearchJSon(search, assetType, country)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Print(jsonString)
+		os.Exit(0)
+	}
+
+	if isFlagPassed("symbol") && isFlagPassed("assetType") && isFlagPassed("country") {
+
+		records, err := investgo.GetHistoricalData(country, symbol, assetType, fromDate, toDate)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Print(records)
+		os.Exit(0)
+	}
+
+	if isFlagPassed("search") && !jsonFormat {
+		stocks, err := investgo.Search(search)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Print(stocks)
+		os.Exit(0)
+	}
+
+	if isFlagPassed("search") && jsonFormat {
+		jsonString, err := investgo.SearchSymbolJSON(search)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Print(jsonString)
+		os.Exit(0)
+	}
+
 }
 
 // readLines reads a whole file into memory

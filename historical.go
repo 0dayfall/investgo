@@ -2,13 +2,11 @@ package investgo
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -77,19 +75,10 @@ import (
         2010-01-08  13.12  13.22  13.04  13.18       0      EUR
 */
 
-func getStockHistoricalData(id int, stock string, fromDate string, toDate string, asJSON bool, order string, interval string) [][]string {
+func getStockHistoricalData(id int, stock string, fromDate string, toDate string, asJSON bool, order string, interval string) ([][]string, error) {
 
-	/*requestBody, err := json.Marshal(map[string]string{
-		"curr_id":      "482",
-		"smlID":        "1159548",
-		"header":       "ABB Historical Data",
-		"st_date":      "01/01/2017",
-		"end_date":     "01/01/2019",
-		"interval_sec": "Daily",
-		"sort_col":     "date",
-		"sort_ord":     "DESC",
-		"action":       "historical_data",
-	})*/
+	records := [][]string{{"Date", "Open", "High", "Low", "Close", "Vol."}}
+
 	form := url.Values{}
 	form.Add("curr_id", strconv.Itoa(id))
 	form.Add("smlID", "1159548")
@@ -110,30 +99,20 @@ func getStockHistoricalData(id int, stock string, fromDate string, toDate string
 
 	request, err := http.NewRequest("POST", url, strings.NewReader(form.Encode()))
 	if err != nil {
-		log.Fatalln(err)
+		return records, err
 	}
-	//request.PostForm = form
 
 	request.Header.Add("Accept", "text/plain, */*; q=0.01")
 	request.Header.Add("Accept-Encoding", "gzip, deflate, br")
-	//request.Header.Add("Connection", "keep-alive")
 	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	request.Header.Add("Referer", "https://www.investing.com/equities/abb-ltd-historical-data?cid=482")
 	request.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36")
 	request.Header.Add("X-Requested-With", "XMLHttpRequest")
 
-	/*fmt.Println(request.Header)
-	fmt.Println()
-	fmt.Println(request.Body)
-	fmt.Println()*/
-
 	resp, err := client.Do(request)
 	if err != nil {
-		log.Fatalln(err)
+		return records, err
 	}
-
-	fmt.Println(resp.Status)
-	fmt.Println(resp.Header)
 
 	defer resp.Body.Close()
 
@@ -152,25 +131,10 @@ func getStockHistoricalData(id int, stock string, fromDate string, toDate string
 
 	body, err := ioutil.ReadAll(reader)
 	if err != nil {
-		log.Fatalln(err)
+		return records, err
 	}
 
-	f, err := os.Create("logfile.html")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer f.Close()
-
-	// attempt #1
-	log.SetOutput(io.Writer(f))
-	log.Println(string(body))
-
-	// While have not hit the </html> tag
-
-	//records := make([][]string, 0)
-	records := [][]string{{"Date", "Open", "High", "Low", "Close", "Vol."}}
 	row := make([]string, 6)
-
 	k := 0
 	tokenizer := html.NewTokenizer(strings.NewReader(string(body)))
 
@@ -237,6 +201,5 @@ func getStockHistoricalData(id int, stock string, fromDate string, toDate string
 		}
 	}
 
-	return records
-
+	return records, nil
 }
