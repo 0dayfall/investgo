@@ -21,7 +21,7 @@ Date                    Open    High    Low     Close   Vol.
 
 ### Library
 The golang functions can also be used as a library for another program:
-```
+```golang
 records, err := investgo.GetHistoricalData(*historicalCountry, *historicalAssetType, *historicalSymbol, *historicalFromDate, *historicalToDate)
 if err != nil {
 	log.Fatal(err)
