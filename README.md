@@ -4,7 +4,7 @@ investgo is a Golang package to retrieve data from Investing.com, which provides
 ## Usage
 
 ### Command line
-There are 3 command that can be run: search, historical and file. Search searches for bonds, equities, crypto and so on and presents results. The file command reads a file of symbold and write for each one historical data to SYMBOL.csv file. Here is an example of the historical command:
+There are 3 command that can be run: search, historical and file. Search searches for bonds, equities, crypto and so on and presents results. The file command reads a file of symbols separated by newline and write for each one historical data to <SYMBOL>.csv file. Finally here is an example of the historical command which prints to screen:
 
 ```
 λ go run main.go historical -symbol ERICb -assetType equities -country Sweden -fromDate 02/03/2021
