@@ -6,32 +6,62 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"text/tabwriter"
+	"time"
 
 	investgo "github.com/0dayfall/investgo"
 )
 
 func main() {
-	var symbol string
-	var jsonFormat bool
-	var search string
-	var fromDate string
-	var toDate string
-	var country string
-	var assetType string
-	var symbolFile string
-	flag.StringVar(&symbol, "symbol", "", "Symbol to download data for")
-	flag.BoolVar(&jsonFormat, "json", false, "Format as JSON")
-	flag.StringVar(&search, "search", "", "Symbol to search for")
-	flag.StringVar(&fromDate, "fromDate", "", "From date")
-	flag.StringVar(&toDate, "toDate", "", "The date to obtain data to")
-	flag.StringVar(&country, "country", "", "Country stock market")
-	flag.StringVar(&assetType, "assetType", "", "The type of asset: equities, bond, etf, index, crypto")
-	flag.StringVar(&symbolFile, "symbolFile", "", "A file containing symbold to download data for")
-	flag.Parse()
 
-	if isFlagPassed("symbolFile") {
+	searchCmd := flag.NewFlagSet("search", flag.ExitOnError)
+	symbol := searchCmd.String("symbol", "", "Symbol name")
+	country := searchCmd.String("country", "", "Country stock market")
+	assetType := searchCmd.String("assetType", "", "The type of asset: equities, bond, etf, index, crypto")
 
-		symbols, err := readLines(symbolFile)
+	historicalCmd := flag.NewFlagSet("historical", flag.ExitOnError)
+	historicalSymbol := historicalCmd.String("symbol", "", "Symbol name")
+	historicalCountry := historicalCmd.String("country", "", "Country stock market")
+	historicalAssetType := historicalCmd.String("assetType", "", "The type of asset: equities, bond, etf, index, crypto")
+	historicalFromDate := historicalCmd.String("fromDate", "01/01/2015", "From date")
+	historicalToDate := historicalCmd.String("toDate", time.Now().Format("02/01/2006"), "The date to obtain data to")
+
+	fileCmd := flag.NewFlagSet("symbolFile", flag.ExitOnError)
+	fileName := fileCmd.String("filename", "", "File name")
+	fileCountry := fileCmd.String("country", "", "Country stock market")
+	fileAssetType := fileCmd.String("assetType", "", "The type of asset: equities, bond, etf, index, crypto")
+	fileFromDate := fileCmd.String("fromDate", "01/01/2015", "From date")
+	fileToDate := fileCmd.String("toDate", time.Now().Format("02/01/2006"), "The date to obtain data to")
+
+	switch os.Args[1] {
+	case "search":
+		searchCmd.Parse(os.Args[2:])
+
+		jsonString, err := investgo.SearchJSON(*symbol, *assetType, *country)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Print(jsonString)
+
+		os.Exit(0)
+
+	case "historical":
+		historicalCmd.Parse(os.Args[2:])
+
+		records, err := investgo.GetHistoricalData(*historicalCountry, *historicalAssetType, *historicalSymbol, *historicalFromDate, *historicalToDate)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		printRecords(records)
+
+		os.Exit(0)
+
+	case "symbolFile":
+		fileCmd.Parse(os.Args[2:])
+
+		symbols, err := readLines(*fileName)
 
 		if err != nil {
 			log.Fatal(err)
@@ -39,51 +69,37 @@ func main() {
 
 		for _, symbol := range symbols {
 			fmt.Println(symbol)
-			err := investgo.HistoricalDataToCSV(country, assetType, symbol, fromDate, toDate)
+			err := investgo.HistoricalDataToCSV(*fileCountry, *fileAssetType, symbol, *fileFromDate, *fileToDate)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 		os.Exit(0)
+
 	}
 
-	if isFlagPassed("search") && isFlagPassed("assetType") && isFlagPassed("country") && jsonFormat {
-		jsonString, err := investgo.SearchJSon(search, assetType, country)
-		if err != nil {
-			log.Fatal(err)
+}
+
+func printRecords(records [][]string) {
+	w := new(tabwriter.Writer)
+
+	// Format in tab-separated columns with a tab stop of 8.
+	w.Init(os.Stdout, 0, 8, 0, '\t', 0)
+	for _, set := range records {
+		for _, record := range set {
+			fmt.Fprintf(w, "%s\t", record)
 		}
-		fmt.Print(jsonString)
-		os.Exit(0)
+		fmt.Fprintf(w, "\n")
 	}
-
-	if isFlagPassed("symbol") && isFlagPassed("assetType") && isFlagPassed("country") {
-
-		records, err := investgo.GetHistoricalData(country, symbol, assetType, fromDate, toDate)
-		if err != nil {
-			log.Fatal(err)
+	w.Flush()
+	/*
+		for _, set := range records {
+			for _, record := range set {
+				fmt.Printf("\t%s", record)
+			}
+			fmt.Printf("\n")
 		}
-		fmt.Print(records)
-		os.Exit(0)
-	}
-
-	if isFlagPassed("search") && !jsonFormat {
-		stocks, err := investgo.Search(search)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Print(stocks)
-		os.Exit(0)
-	}
-
-	if isFlagPassed("search") && jsonFormat {
-		jsonString, err := investgo.SearchSymbolJSON(search)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Print(jsonString)
-		os.Exit(0)
-	}
-
+	*/
 }
 
 // readLines reads a whole file into memory
@@ -103,6 +119,7 @@ func readLines(path string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
+// isFlagPassed is used to check if a flag is set
 func isFlagPassed(name string) bool {
 	found := false
 	flag.Visit(func(f *flag.Flag) {

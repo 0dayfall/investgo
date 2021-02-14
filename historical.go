@@ -14,67 +14,17 @@ import (
 	"golang.org/x/net/html"
 )
 
-/*
-	This function retrieves historical data from the introduced stock from Investing.com. So on, the historical data
-    of the introduced stock from the specified country in the specified date range will be retrieved and returned as
-    a :obj:`pandas.DataFrame` if the parameters are valid and the request to Investing.com succeeds. Note that additionally
-    some optional parameters can be specified: as_json and order, which let the user decide if the data is going to
-    be returned as a :obj:`json` or not, and if the historical data is going to be ordered ascending or descending (where the
-    index is the date), respectively.
-    Args:
-        stock (:obj:`str`): symbol of the stock to retrieve historical data from.
-        country (:obj:`str`): name of the country from where the stock is.
-        from_date (:obj:`str`): date formatted as `dd/mm/yyyy`, since when data is going to be retrieved.
-        to_date (:obj:`str`): date formatted as `dd/mm/yyyy`, until when data is going to be retrieved.
-        as_json (:obj:`bool`, optional):
-            to determine the format of the output data, either a :obj:`pandas.DataFrame` if False and a :obj:`json` if True.
-        order (:obj:`str`, optional): to define the order of the retrieved data which can either be ascending or descending.
-        interval (:obj:`str`, optional):
-            value to define the historical data interval to retrieve, by default `Daily`, but it can also be `Weekly` or `Monthly`.
-    Returns:
-        :obj:`pandas.DataFrame` or :obj:`json`:
-            The function can return either a :obj:`pandas.DataFrame` or a :obj:`json` object, containing the retrieved
-            historical data of the specified stock from the specified country. So on, the resulting dataframe contains the
-            open, high, low, close and volume values for the selected stock on market days and the currency in which those
-            values are presented.
-            The returned data is case we use default arguments will look like::
-                Date || Open | High | Low | Close | Volume | Currency
-                -----||------|------|-----|-------|--------|----------
-                xxxx || xxxx | xxxx | xxx | xxxxx | xxxxxx | xxxxxxxx
-            but if we define `as_json=True`, then the output will be::
-                {
-                    name: name,
-                    historical: [
-                        {
-                            date: 'dd/mm/yyyy',
-                            open: x,
-                            high: x,
-                            low: x,
-                            close: x,
-                            volume: x,
-                            currency: x
-                        },
-                        ...
-                    ]
-                }
-    Raises:
-        ValueError: raised whenever any of the introduced arguments is not valid or errored.
-        IOError: raised if stocks object/file was not found or unable to retrieve.
-        RuntimeError: raised if the introduced stock/country was not found or did not match any of the existing ones.
-        ConnectionError: raised if connection to Investing.com could not be established.
-        IndexError: raised if stock historical data was unavailable or not found in Investing.com.
-    Examples:
-        >>> data = investpy.get_stock_historical_data(stock='bbva', country='spain', from_date='01/01/2010', to_date='01/01/2019')
-        >>> data.head()
-                     Open   High    Low  Close  Volume Currency
-        Date
-        2010-01-04  12.73  12.96  12.73  12.96       0      EUR
-        2010-01-05  13.00  13.11  12.97  13.09       0      EUR
-        2010-01-06  13.03  13.17  13.02  13.12       0      EUR
-        2010-01-07  13.02  13.11  12.93  13.05       0      EUR
-        2010-01-08  13.12  13.22  13.04  13.18       0      EUR
+/* This function retrieves historical data from the introduced stock
+   from Investing.com. So on, the historical data
+   of the introduced stock from the specified country in the
+   specified date range will be retrieved and returned as
+        Date        Open   High    Low  Close  Volume
+        2010-01-04  12.73  12.96  12.73  12.96       0
+        2010-01-05  13.00  13.11  12.97  13.09       0
+        2010-01-06  13.03  13.17  13.02  13.12       0
+        2010-01-07  13.02  13.11  12.93  13.05       0
+        2010-01-08  13.12  13.22  13.04  13.18       0
 */
-
 func getStockHistoricalData(id int, stock string, fromDate string, toDate string, asJSON bool, order string, interval string) ([][]string, error) {
 
 	records := [][]string{{"Date", "Open", "High", "Low", "Close", "Vol."}}
@@ -110,6 +60,7 @@ func getStockHistoricalData(id int, stock string, fromDate string, toDate string
 	request.Header.Add("X-Requested-With", "XMLHttpRequest")
 
 	resp, err := client.Do(request)
+
 	if err != nil {
 		return records, err
 	}

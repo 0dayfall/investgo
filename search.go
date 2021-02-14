@@ -3,6 +3,7 @@ package investgo
 import (
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,15 +13,15 @@ import (
 )
 
 func symbolId(country string, assetType string, symbol string) (int, error) {
-	s, err := searchQuotes(symbol)
 
+	s, err := searchQuotes(symbol)
 	if err != nil {
 		//Error
 		return -1, err
 	}
 
 	for _, quote := range s.Quotes {
-		if quote.Symbol == symbol && quote.Flag == country && quote.PairType == assetType {
+		if strings.EqualFold(quote.PairType, assetType) && strings.EqualFold(quote.Flag, country) {
 			//Found
 			return quote.PairId, nil
 		}
@@ -48,12 +49,32 @@ func searchQuotesAssetTypeCountry(symbol string, assetType string, country strin
 
 	q := make([]Quote, 0)
 
-	for _, quote := range s.Quotes {
+	if len(assetType) > 0 && len(country) > 0 {
+		for _, quote := range s.Quotes {
 
-		if strings.EqualFold(quote.Symbol, symbol) && strings.EqualFold(quote.PairType, assetType) && strings.EqualFold(quote.Flag, country) {
-			//Found
-			q = append(q, quote)
+			if strings.EqualFold(quote.PairType, assetType) && strings.EqualFold(quote.Flag, country) {
+				//Found
+				q = append(q, quote)
+			}
 		}
+	} else if len(country) > 0 {
+		for _, quote := range s.Quotes {
+
+			if strings.EqualFold(quote.Flag, country) {
+				//Found
+				q = append(q, quote)
+			}
+		}
+	} else if len(assetType) > 0 {
+		for _, quote := range s.Quotes {
+			if strings.EqualFold(quote.PairType, assetType) {
+				fmt.Println("MATCH!")
+				//Found
+				q = append(q, quote)
+			}
+		}
+	} else if len(symbol) > 0 {
+		return s, nil
 	}
 
 	s.Quotes = q
