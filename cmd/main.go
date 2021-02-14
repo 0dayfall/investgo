@@ -26,8 +26,8 @@ func main() {
 	historicalFromDate := historicalCmd.String("fromDate", "01/01/2015", "From date")
 	historicalToDate := historicalCmd.String("toDate", time.Now().Format("02/01/2006"), "The date to obtain data to")
 
-	fileCmd := flag.NewFlagSet("symbolFile", flag.ExitOnError)
-	fileName := fileCmd.String("filename", "", "File name")
+	fileCmd := flag.NewFlagSet("file", flag.ExitOnError)
+	fileName := fileCmd.String("symbols", "", "File name")
 	fileCountry := fileCmd.String("country", "", "Country stock market")
 	fileAssetType := fileCmd.String("assetType", "", "The type of asset: equities, bond, etf, index, crypto")
 	fileFromDate := fileCmd.String("fromDate", "01/01/2015", "From date")
@@ -58,7 +58,7 @@ func main() {
 
 		os.Exit(0)
 
-	case "symbolFile":
+	case "file":
 		fileCmd.Parse(os.Args[2:])
 
 		symbols, err := readLines(*fileName)
@@ -67,12 +67,13 @@ func main() {
 			log.Fatal(err)
 		}
 
-		for _, symbol := range symbols {
-			fmt.Println(symbol)
-			err := investgo.HistoricalDataToCSV(*fileCountry, *fileAssetType, symbol, *fileFromDate, *fileToDate)
+		for _, sym := range symbols {
+			fmt.Printf("%s", sym)
+			err := investgo.HistoricalDataToCSV(*fileCountry, *fileAssetType, sym, *fileFromDate, *fileToDate)
 			if err != nil {
 				log.Fatal(err)
 			}
+			fmt.Printf("\tOK\n")
 		}
 		os.Exit(0)
 

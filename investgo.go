@@ -48,7 +48,7 @@ func HistoricalDataToCSV(country string, assetType string, symbol string, fromDa
 		return err
 	}
 
-	records, err := getStockHistoricalData(id, symbol, "01/01/2015", "02/01/2020", true, "ASC", "Daily")
+	records, err := getStockHistoricalData(id, symbol, fromDate, toDate, true, "ASC", "Daily")
 	if err != nil {
 		return err
 	}
@@ -83,8 +83,6 @@ func writeToCSV(symbol string, records [][]string) error {
 		if mkdirErr != nil {
 			return mkdirErr
 		}
-	} else {
-		return err
 	}
 
 	//Write to csv file
