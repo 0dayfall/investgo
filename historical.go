@@ -18,7 +18,7 @@ import (
    from Investing.com. So on, the historical data
    of the introduced stock from the specified country in the
    specified date range will be retrieved and returned as
-        Date        Open   High    Low  Close  Volume
+        Date        Close  Open   High   Low    Volume
         2010-01-04  12.73  12.96  12.73  12.96       0
         2010-01-05  13.00  13.11  12.97  13.09       0
         2010-01-06  13.03  13.17  13.02  13.12       0
@@ -27,7 +27,8 @@ import (
 */
 func getStockHistoricalData(id int, stock string, fromDate string, toDate string, asJSON bool, order string, interval string) ([][]string, error) {
 
-	records := [][]string{{"Date", "Open", "High", "Low", "Close", "Vol."}}
+	//Watch out, it's COHL not OHLC
+	records := [][]string{{"Date", "Close", "Open", "High", "Low", "Vol."}}
 
 	form := url.Values{}
 	form.Add("curr_id", strconv.Itoa(id))

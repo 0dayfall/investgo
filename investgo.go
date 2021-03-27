@@ -42,7 +42,7 @@ func SearchJSON(symbol string, assetType string, country string) (string, error)
 }
 
 // HistoricalDataToCSV is used to write historical data to CSV
-func HistoricalDataToCSV(country string, assetType string, symbol string, fromDate string, toDate string) error {
+func HistoricalDataToCSV(country string, assetType string, symbol string, fromDate string, toDate string, dir string) error {
 	id, err := symbolId(country, assetType, symbol)
 	if err != nil {
 		return err
@@ -53,7 +53,7 @@ func HistoricalDataToCSV(country string, assetType string, symbol string, fromDa
 		return err
 	}
 
-	return writeToCSV(symbol, records)
+	return writeToCSV(symbol, records, dir)
 
 }
 
@@ -76,17 +76,37 @@ func GetHistoricalData(country string, assetType string, symbol string, fromDate
 	return records, nil
 }
 
-func writeToCSV(symbol string, records [][]string) error {
+//Swapping Date, Close, Open, High, Low, Volume to
+// Date, Open, High, Low, Close, Volume
+func swapColumns(records [][]string) {
 
-	if _, err := os.Stat("CSV"); os.IsNotExist(err) {
-		mkdirErr := os.Mkdir("CSV", 0755)
+	for _, record := range records {
+		close := record[1]
+		open := record[2]
+		high := record[3]
+		low := record[4]
+
+		//record[0] no swap
+		record[1] = open
+		record[2] = high
+		record[3] = low
+		record[4] = close
+		//record[5] no swap
+
+	}
+}
+
+func writeToCSV(symbol string, records [][]string, dir string) error {
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		mkdirErr := os.Mkdir(dir, 0755)
 		if mkdirErr != nil {
 			return mkdirErr
 		}
 	}
 
 	//Write to csv file
-	file, err := os.Create("CSV\\" + symbol + ".csv")
+	file, err := os.Create(dir + string(os.PathSeparator) + symbol + ".csv")
 	if err != nil {
 		return err
 	}
@@ -95,6 +115,7 @@ func writeToCSV(symbol string, records [][]string) error {
 
 	csvWriter := csv.NewWriter(file)
 
+	swapColumns(records)
 	err = csvWriter.WriteAll(records)
 	if err != nil {
 		return err

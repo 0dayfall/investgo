@@ -27,15 +27,19 @@ func main() {
 	historicalToDate := historicalCmd.String("toDate", time.Now().Format("02/01/2006"), "The date to obtain data to")
 
 	fileCmd := flag.NewFlagSet("file", flag.ExitOnError)
+	fileDir := fileCmd.String("dir", "CSV", "Directory to store files")
 	fileName := fileCmd.String("symbols", "", "File name")
-	fileCountry := fileCmd.String("country", "", "Country stock market")
-	fileAssetType := fileCmd.String("assetType", "", "The type of asset: equities, bond, etf, index, crypto")
-	fileFromDate := fileCmd.String("fromDate", "01/01/2015", "From date")
+	fileCountry := fileCmd.String("country", "Sweden", "Country stock market")
+	fileAssetType := fileCmd.String("assetType", "equities", "The type of asset: equities, bond, etf, index, crypto")
+	fileFromDate := fileCmd.String("fromDate", "01/01/2010", "From date")
 	fileToDate := fileCmd.String("toDate", time.Now().Format("02/01/2006"), "The date to obtain data to")
 
 	switch os.Args[1] {
 	case "search":
-		searchCmd.Parse(os.Args[2:])
+		err := searchCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Fatal(0)
+		}
 
 		jsonString, err := investgo.SearchJSON(*symbol, *assetType, *country)
 		if err != nil {
@@ -47,7 +51,10 @@ func main() {
 		os.Exit(0)
 
 	case "historical":
-		historicalCmd.Parse(os.Args[2:])
+		err := historicalCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Fatal(0)
+		}
 
 		records, err := investgo.GetHistoricalData(*historicalCountry, *historicalAssetType, *historicalSymbol, *historicalFromDate, *historicalToDate)
 		if err != nil {
@@ -59,17 +66,19 @@ func main() {
 		os.Exit(0)
 
 	case "file":
-		fileCmd.Parse(os.Args[2:])
+		err := fileCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Fatal(0)
+		}
 
 		symbols, err := readLines(*fileName)
-
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		for _, sym := range symbols {
 			fmt.Printf("%s", sym)
-			err := investgo.HistoricalDataToCSV(*fileCountry, *fileAssetType, sym, *fileFromDate, *fileToDate)
+			err := investgo.HistoricalDataToCSV(*fileCountry, *fileAssetType, sym, *fileFromDate, *fileToDate, *fileDir)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -118,15 +127,4 @@ func readLines(path string) ([]string, error) {
 		lines = append(lines, scanner.Text())
 	}
 	return lines, scanner.Err()
-}
-
-// isFlagPassed is used to check if a flag is set
-func isFlagPassed(name string) bool {
-	found := false
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == name {
-			found = true
-		}
-	})
-	return found
 }
